@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cloudpilot
+      POSTGRES_PASSWORD: cloudpilot
+      POSTGRES_DB: cloudpilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - cloudpilot_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://cloudpilot:cloudpilot@db:5432/cloudpilot
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/code/app
+
+volumes:
+  cloudpilot_pgdata:
