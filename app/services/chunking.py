@@ -78,9 +78,13 @@ def heading_aware(text: str, max_words: int = 120, overlap: int = 20) -> list[tu
     """
     chunks: list[tuple[str | None, str]] = []
     for heading, body in _split_sections(text):
-        content = f"{heading}\n{body.strip()}" if heading else body.strip()
-        if not content:
+        if not body.strip():
+            # A heading with nothing under it (a document H1 sitting
+            # directly above its first H2) would otherwise become a chunk
+            # of pure title: measured at rank 3 on two of four test
+            # queries, carrying no answer. See docs/chunking.md.
             continue
+        content = f"{heading}\n{body.strip()}" if heading else body.strip()
         if len(content.split()) <= max_words:
             chunks.append((heading, content))
         else:
